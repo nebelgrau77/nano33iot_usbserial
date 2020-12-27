@@ -73,9 +73,7 @@ fn main() -> ! {
         &mut pins.port,
         );  
 
-    //let mut val: u8 = 0;
-
-    let mut val: f32 = 0.0;
+    let mut val: u8 = 0;
 
     loop {
  
@@ -83,25 +81,25 @@ fn main() -> ! {
             continue;
         }       
         
-        let mut text_buf = ArrayString::<[u8; 64]>::new();
+        let mut text_buf = ArrayString::<[u8; 16]>::new();
 
-        fmt_output(&mut text_buf, val, val, val);
+        fmt_output(&mut text_buf, val);
 
         serial.write(text_buf.as_bytes());
 
-        delay.delay_ms(20u16); // 50Hz
+        delay.delay_ms(200u16);
 
         led.toggle();
 
-        val += 0.00001;
+        val += 1;
 
     }
 
 }
 
 
-pub fn fmt_output(buf: &mut ArrayString<[u8; 64]>, x: f32, y: f32, z: f32) {   
+pub fn fmt_output(buf: &mut ArrayString<[u8; 16]>, val: u8) {   
     
-    fmt::write(buf, format_args!("{:.06},{:.06},{:.06}\n", x,y,z)).unwrap();
+    fmt::write(buf, format_args!("val: {:03}\n", val)).unwrap();
 
 }
