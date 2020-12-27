@@ -1,3 +1,8 @@
+//! this works, must be built with --features="usb"
+//! 
+//! care must be taken to get the right size of the buffer
+//! 
+
 #![no_std]
 #![no_main]
 
@@ -12,11 +17,16 @@ use hal::{clock::GenericClockController,
         pac::{CorePeripherals, Peripherals},               
         prelude::*,
         delay::Delay,
+        time::KiloHertz,
         };
 
 use usb_device::prelude::*;
 use usbd_serial::{SerialPort, USB_CLASS_CDC};
 
+
+use core::fmt;
+
+use arrayvec::ArrayString;
 
 #[entry]
 fn main() -> ! {
@@ -53,21 +63,43 @@ fn main() -> ! {
         .device_class(USB_CLASS_CDC)
         .build();
 
-    led.toggle(); //checking various steps of the program
-        
+    let i2c = hal::i2c_master(
+        &mut clocks,
+        KiloHertz(400),
+        peripherals.SERCOM4, 
+        &mut peripherals.PM, 
+        pins.sda,
+        pins.scl,
+        &mut pins.port,
+        );  
+
+    let mut val: u8 = 0;
+
     loop {
  
         if !usb_dev.poll(&mut [&mut serial]) {
             continue;
         }       
         
+        let mut text_buf = ArrayString::<[u8; 16]>::new();
 
-        serial.write("hello world!".as_bytes()).unwrap();
+        fmt_output(&mut text_buf, val);
 
-        //delay.delay_ms(50u16);
+        serial.write(text_buf.as_bytes());
+
+        delay.delay_ms(200u16);
 
         led.toggle();
 
+        val += 1;
+
     }
+
+}
+
+
+pub fn fmt_output(buf: &mut ArrayString<[u8; 16]>, val: u8) {   
+    
+    fmt::write(buf, format_args!("val: {:03}\n", val)).unwrap();
 
 }
